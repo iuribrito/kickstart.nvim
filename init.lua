@@ -850,7 +850,13 @@ require('lazy').setup({
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
         preset = 'enter',
-        ['<Tab>'] = { 'select_next', name = 'Select next suggestion',},
+        ['<Tab>'] = { function (cmp)
+          if cmp.is_menu_visible() then
+            return cmp.select_next()
+          else
+            return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Tab>', true, true, true), 'n', true)
+          end
+        end, name = 'Select next suggestion',},
         ['<S-Tab>'] = { 'select_prev', name = 'Select previous suggestion' },
         ['<C-Tab>'] = { 'snippet_forward', name = 'Select next snippet' },
 
