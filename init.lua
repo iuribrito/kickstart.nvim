@@ -847,7 +847,10 @@ require('lazy').setup({
         -- <c-k>: Toggle signature help
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
-        preset = 'default',
+        preset = 'enter',
+        ['<Tab>'] = { 'select_next', name = 'Select next suggestion',},
+        ['<S-Tab>'] = { 'select_prev', name = 'Select previous suggestion' },
+        ['<C-Tab>'] = { 'snippet_forward', name = 'Select next snippet' },
 
         -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
         --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -1043,9 +1046,9 @@ require('lazy').setup({
       },
       vendors = {
         groq = {
-          endpoint = "https://api.groq.com/openai/v1",
-          api_key_name = "GROQ_API_KEY",
-          model = "llama3-70b-8192"
+          endpoint = 'https://api.groq.com/openai/v1',
+          api_key_name = 'GROQ_API_KEY',
+          model = 'llama3-70b-8192',
         },
         deepseek = {
           endpoint = 'https://api.deepseek.com/chat/completions',
