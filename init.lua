@@ -112,6 +112,8 @@ vim.o.showmode = false
 
 -- Quantidade de espaços por tab
 vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
+vim.opt.expandtab = true
 
 -- Sync clipboard between OS and Neovim.
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
