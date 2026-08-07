@@ -99,7 +99,7 @@ do
   vim.g.maplocalleader = ' '
 
   -- Set to true if you have a Nerd Font installed and selected in the terminal
-  vim.g.have_nerd_font = false
+  vim.g.have_nerd_font = true
 
   -- [[ Setting options ]]
   --  See `:help vim.o`
@@ -110,7 +110,7 @@ do
   vim.o.number = true
   -- You can also add relative line numbers, to help with jumping.
   --  Experiment for yourself to see if you like it!
-  -- vim.o.relativenumber = true
+  vim.o.relativenumber = true
 
   -- Enable mouse mode, can be useful for resizing splits for example!
   vim.o.mouse = 'a'
@@ -118,11 +118,38 @@ do
   -- Don't show the mode, since it's already in the status line
   vim.o.showmode = false
 
+  -- Quantidade de espaços por tab
+  vim.opt.tabstop = 4
+  vim.opt.shiftwidth = 4
+  vim.opt.expandtab = true
+
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = { 'typescript', 'javascript', 'json', 'html', 'css', 'lua' },
+    callback = function()
+      vim.opt_local.tabstop = 2
+      vim.opt_local.shiftwidth = 2
+      vim.opt_local.expandtab = true
+    end,
+  })
+
   -- Sync clipboard between OS and Neovim.
   --  Schedule the setting after `UiEnter` because it can increase startup-time.
   --  Remove this option if you want your OS clipboard to remain independent.
   --  See `:help 'clipboard'`
-  vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
+  vim.g.clipboard = {
+    name = 'wayland',
+    copy = {
+      ['+'] = 'wl-copy',
+      ['*'] = 'wl-copy',
+    },
+    paste = {
+      ['+'] = 'wl-paste --no-newline',
+      ['*'] = 'wl-paste --no-newline',
+    },
+    cache_enabled = 1,
+  }
+
+  vim.schedule(function() vim.opt.clipboard = 'unnamedplus' end)
 
   -- Enable break indent
   vim.o.breakindent = true
@@ -240,6 +267,32 @@ do
   -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
   -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
+  -- Mapeamento para mover a linha atual para baixo no modo normal
+  vim.api.nvim_set_keymap('n', '<A-j>', ':m .+1<CR>==', { noremap = true, silent = true, desc = 'Move line down' })
+  -- Mapeamento para mover a linha atual para cima no modo normal
+  vim.api.nvim_set_keymap('n', '<A-k>', ':m .-2<CR>==', { noremap = true, silent = true, desc = 'Move line up' })
+  -- Mapeamento para mover linhas selecionadas para baixo no modo visual
+  vim.api.nvim_set_keymap('v', '<A-j>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true, desc = 'Move line down' })
+  -- Mapeamento para mover linhas selecionadas para cima no modo visual
+  vim.api.nvim_set_keymap('v', '<A-k>', ":m '<-2<CR>gv=gv", { noremap = true, silent = true, desc = 'Move line up' })
+
+  -- Manter a seleção ao indentar
+  vim.api.nvim_set_keymap('v', '<', '<gv', { noremap = true, silent = true, desc = 'Indent left' })
+  vim.api.nvim_set_keymap('v', '>', '>gv', { noremap = true, silent = true, desc = 'Indent right' })
+
+  -- Próximo/Anterior
+  vim.keymap.set('n', '<leader>bn', ':bnext<CR>', { silent = true, desc = 'Next buffer' })
+  vim.keymap.set('n', '<leader>bp', ':bprevious<CR>', { silent = true, desc = 'Previous buffer' })
+
+  -- Fechar atual
+  vim.keymap.set('n', '<leader>bd', ':bdelete<CR>', { silent = true, desc = 'Delete current buffer' })
+
+  -- Fechar todos
+  vim.keymap.set('n', '<leader>ba', ':%bd|enew<CR>', { silent = true, desc = 'Delete all buffers' })
+
+  -- Fechar todos menos o atual
+  vim.keymap.set('n', '<leader>bo', ':%bd|e#<CR>', { silent = true, desc = 'Delete other buffers' })
+
   -- [[ Basic Autocommands ]]
   --  See `:help lua-guide-autocommands`
 
@@ -346,6 +399,9 @@ do
   vim.pack.add { gh 'NMAC427/guess-indent.nvim' }
   require('guess-indent').setup {}
 
+  -- Automatically respects .editorconfig files in a project (no setup() needed)
+  vim.pack.add { gh 'editorconfig/editorconfig-vim' }
+
   -- Here is a more advanced configuration example that passes options to `gitsigns.nvim`
   --
   -- See `:help gitsigns` to understand what each configuration key does.
@@ -382,18 +438,17 @@ do
   -- change the command under that to load whatever the name of that colorscheme is.
   --
   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-  vim.pack.add { gh 'folke/tokyonight.nvim' }
-  ---@diagnostic disable-next-line: missing-fields
-  require('tokyonight').setup {
-    styles = {
-      comments = { italic = false }, -- Disable italics in comments
-    },
+  vim.pack.add { { src = gh 'catppuccin/nvim', name = 'catppuccin' } }
+
+  require('catppuccin').setup {
+    transparent_background = true,
   }
 
   -- Load the colorscheme here.
-  -- Like many other themes, this one has different styles, and you could load
-  -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-  vim.cmd.colorscheme 'tokyonight-night'
+  vim.cmd.colorscheme 'catppuccin-mocha'
+
+  -- You can configure highlights by doing something like:
+  vim.cmd.hi 'Comment gui=none'
 
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }
@@ -435,15 +490,16 @@ do
   -- Simple and easy statusline.
   --  You could remove this setup call if you don't like it,
   --  and try some other statusline plugin
-  local statusline = require 'mini.statusline'
-  -- Set `use_icons` to true if you have a Nerd Font
-  statusline.setup { use_icons = vim.g.have_nerd_font }
+  --  NOTE: disabled in favor of `lualine.nvim` (see kickstart.plugins.lualine)
+  -- local statusline = require 'mini.statusline'
+  -- -- Set `use_icons` to true if you have a Nerd Font
+  -- statusline.setup { use_icons = vim.g.have_nerd_font }
 
   -- You can configure sections in the statusline by overriding their
   -- default behavior. For example, here we set the section for
   -- cursor location to LINE:COLUMN
   ---@diagnostic disable-next-line: duplicate-set-field
-  statusline.section_location = function() return '%2l:%-2v' end
+  -- statusline.section_location = function() return '%2l:%-2v' end
 
   -- ... and there is more!
   --  Check out: https://github.com/nvim-mini/mini.nvim
@@ -693,9 +749,9 @@ do
   ---@type table<string, vim.lsp.Config>
   local servers = {
     -- clangd = {},
-    -- gopls = {},
+    gopls = {},
+    rust_analyzer = {},
     -- pyright = {},
-    -- rust_analyzer = {},
     --
     -- Some languages (like typescript) have entire language plugins that can be useful:
     --    https://github.com/pmizio/typescript-tools.nvim
@@ -736,6 +792,49 @@ do
       settings = {
         Lua = {
           format = { enable = false }, -- Disable formatting (formatting is done by stylua)
+          diagnostics = {
+            globals = { 'vim' },
+          },
+        },
+      },
+    },
+
+    -- PHP (Intelephense para autocomplete/indexação rápida + Phpactor para refatorações)
+    intelephense = {
+      settings = {
+        intelephense = {
+          files = {
+            maxSize = 5000000, -- aumenta o tamanho máximo do arquivo que pode ser analisado
+          },
+        },
+      },
+    },
+    phpactor = {},
+
+    -- TypeScript / JavaScript (Alta performance)
+    vtsls = {},
+
+    -- Frontend Web
+    html = {},
+    cssls = {},
+    jsonls = {},
+    tailwindcss = {},
+    svelte = {}, -- Servidor oficial do Svelte (svelte-language-server)
+
+    -- DevOps & Shell Scripting
+    dockerls = {},
+    bashls = {},
+
+    qmlls = {
+      -- Isso evita que o LSP use seu ~/.config como raiz
+      root_dir = function(fname)
+        return require('lspconfig.util').root_pattern('.git', 'qmlls.ini', '.qmlproject', 'CMakeLists.txt')(fname) or vim.fn.getcwd() -- Se não achar nada, usa a pasta onde o nvim foi aberto
+      end,
+      settings = {
+        qml = {
+          -- Adicione configurações extras se necessário
+          format = { enable = true },
+          lint = { enable = true },
         },
       },
     },
@@ -766,6 +865,9 @@ do
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
     -- You can add other tools here that you want Mason to install
+    'goimports',
+    'gofumpt',
+    'golangci-lint',
   })
 
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -785,24 +887,14 @@ do
   vim.pack.add { gh 'stevearc/conform.nvim' }
   require('conform').setup {
     notify_on_error = false,
-    format_on_save = function(bufnr)
-      -- You can specify filetypes to autoformat on save here:
-      local enabled_filetypes = {
-        -- lua = true,
-        -- python = true,
-      }
-      if enabled_filetypes[vim.bo[bufnr].filetype] then
-        return { timeout_ms = 500 }
-      else
-        return nil
-      end
-    end,
+    format_on_save = false,
     default_format_opts = {
       lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
     },
     -- You can also specify external formatters in here.
     formatters_by_ft = {
       -- rust = { 'rustfmt' },
+      go = { 'goimports', 'gofumpt' },
       -- Conform can also run multiple formatters sequentially
       -- python = { "isort", "black" },
       --
@@ -829,9 +921,8 @@ do
   -- `friendly-snippets` contains a variety of premade snippets.
   --    See the README about individual language/framework/plugin snippets:
   --    https://github.com/rafamadriz/friendly-snippets
-  --
-  -- vim.pack.add { gh 'rafamadriz/friendly-snippets' }
-  -- require('luasnip.loaders.from_vscode').lazy_load()
+  vim.pack.add { gh 'rafamadriz/friendly-snippets' }
+  require('luasnip.loaders.from_vscode').lazy_load()
 
   -- [[ Autocomplete Engine ]]
   vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
@@ -858,7 +949,19 @@ do
       -- <c-k>: Toggle signature help
       --
       -- See `:help blink-cmp-config-keymap` for defining your own keymap
-      preset = 'default',
+      preset = 'enter',
+      ['<Tab>'] = {
+        function(cmp)
+          if cmp.is_menu_visible() then
+            return cmp.select_next()
+          else
+            return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Tab>', true, true, true), 'n', true)
+          end
+        end,
+        name = 'Select next suggestion',
+      },
+      ['<S-Tab>'] = { 'select_prev', name = 'Select previous suggestion' },
+      ['<C-Tab>'] = { 'snippet_forward', name = 'Select next snippet' },
 
       -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
       --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -873,7 +976,7 @@ do
     completion = {
       -- By default, you may press `<c-space>` to show the documentation.
       -- Optionally, set `auto_show = true` to show the documentation after a delay.
-      documentation = { auto_show = false, auto_show_delay_ms = 500 },
+      documentation = { auto_show = true, auto_show_delay_ms = 500 },
     },
 
     sources = {
@@ -972,12 +1075,15 @@ do
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug'
-  -- require 'kickstart.plugins.indent_line'
+  require 'kickstart.plugins.debug'
+  require 'kickstart.plugins.indent_line'
   -- require 'kickstart.plugins.lint'
-  -- require 'kickstart.plugins.autopairs'
-  -- require 'kickstart.plugins.neo-tree'
-  -- require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
+  require 'kickstart.plugins.autopairs'
+  require 'kickstart.plugins.neo-tree'
+  require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
+  require 'kickstart.plugins.lualine'
+  require 'kickstart.plugins.trouble'
+  require 'kickstart.plugins.toggleterm'
 
   -- NOTE: You can add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --
